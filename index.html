@@ -2,154 +2,191 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ASHURA PRIME LOGIN</title>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
     * {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
       box-sizing: border-box;
     }
 
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #000;
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
+    body, html {
+      height: 100%;
+      overflow: hidden;
+      background: #0f0f0f;
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0;
     }
 
     .container {
-      background-color: #111;
-      padding: 30px 20px;
-      border-radius: 12px;
-      width: 100%;
+      position: relative;
+      z-index: 2;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(5px);
+    }
+
+    .login-card {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 40px 30px;
+      border-radius: 20px;
+      width: 90%;
       max-width: 400px;
-      box-shadow: 0 0 15px rgba(0, 0, 255, 0.3);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     h2 {
-      color: #00ccff;
       text-align: center;
+      color: #fff;
       margin-bottom: 25px;
     }
 
-    input {
-      width: 100%;
+    .input-group {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.1);
       padding: 12px;
-      margin: 8px 0;
+      border-radius: 12px;
+      margin-bottom: 15px;
+    }
+
+    .input-group i {
+      margin-right: 10px;
+      color: #fff;
+    }
+
+    .input-group input {
+      flex: 1;
+      background: transparent;
       border: none;
-      border-radius: 6px;
-      background-color: #222;
+      outline: none;
       color: #fff;
       font-size: 16px;
+    }
+
+    .input-group input::placeholder {
+      color: #ccc;
     }
 
     button {
       width: 100%;
       padding: 12px;
-      background-color: #0033cc;
-      color: #fff;
-      font-weight: bold;
       border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 10px;
+      border-radius: 12px;
       font-size: 16px;
+      font-weight: bold;
+      color: #000;
+      background: #00ffc8;
+      cursor: pointer;
+      transition: background 0.3s;
     }
 
     button:hover {
-      background-color: #0055ff;
+      background: #00cfa4;
     }
 
-    hr {
-      border: 0;
-      height: 1px;
-      background-color: #333;
-      margin: 20px 0;
+    .telegram-btn {
+      margin-top: 15px;
+      width: 100%;
+      background: #0088cc;
+      color: white;
     }
 
-    @media (max-width: 480px) {
-      h2 {
-        font-size: 20px;
-      }
-
-      input, button {
-        font-size: 15px;
-        padding: 10px;
-      }
+    .status {
+      text-align: center;
+      color: red;
+      margin-top: 10px;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
+  <canvas id="fireworks"></canvas>
+
   <div class="container">
-    <h2>ASHURA PRIME LOGIN</h2>
-
-    <!-- Login Form -->
-    <input type="email" id="loginEmail" placeholder="Login Email" />
-    <input type="password" id="loginPassword" placeholder="Login Password" />
-    <button onclick="login()">Login</button>
-
-    <hr />
-
-    <!-- Registration Form -->
-    <input type="email" id="regEmail" placeholder="Register Email" />
-    <input type="password" id="regPassword" placeholder="Register Password" />
-    <input type="text" id="regPhone" placeholder="Phone Number" />
-    <button onclick="register()">Register</button>
+    <div class="login-card">
+      <h2>Ashura Login</h2>
+      <div class="input-group">
+        <i>👤</i>
+        <input type="text" id="username" placeholder="Username">
+      </div>
+      <div class="input-group">
+        <i>🔒</i>
+        <input type="password" id="password" placeholder="Password">
+      </div>
+      <button onclick="login()">Login</button>
+      <button class="telegram-btn" onclick="window.open('https://t.me/yourtelegramusername', '_blank')">Join Telegram</button>
+      <div class="status" id="status"></div>
+    </div>
   </div>
 
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyDTjq5sknDg2SSmdN2fbtnirj9jAA6wxyo",
-      authDomain: "shurs-7d0bd.firebaseapp.com",
-      databaseURL: "https://shurs-7d0bd-default-rtdb.firebaseio.com",
-      projectId: "shurs-7d0bd",
-      storageBucket: "shurs-7d0bd.firebasestorage.app",
-      messagingSenderId: "789512168670",
-      appId: "1:789512168670:android:cc1c52edf1031464768e4f"
+      apiKey: "AIzaSyDn8kz-xGV0JAjL8gZjBFR5cR7bCFKga0E",
+      authDomain: "ashurastore.firebaseapp.com",
+      databaseURL: "https://ashurastore-default-rtdb.firebaseio.com",
+      projectId: "ashurastore",
+      storageBucket: "ashurastore.appspot.com",
+      messagingSenderId: "581123623408",
+      appId: "1:581123623408:web:21a7edff6c8055fbb4f232"
     };
 
     firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    function login() {
-      const email = document.getElementById("loginEmail").value;
-      const password = document.getElementById("loginPassword").value;
+    async function login() {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const status = document.getElementById("status");
 
-      firebase.auth().signInWithEmailAndPassword(email, password)
-        .then(() => {
-          window.location.href = "product.html";
-        })
-        .catch(error => {
-          alert("Login Failed: " + error.message);
-        });
+      if (!username || !password) {
+        status.innerText = "Enter both username and password.";
+        return;
+      }
+
+      const snapshot = await db.ref("users/" + username).once("value");
+      const data = snapshot.val();
+
+      if (!data) {
+        status.innerText = "User not found.";
+        return;
+      }
+
+      if (data.password !== password) {
+        status.innerText = "Incorrect password.";
+        return;
+      }
+
+      if (Date.now() > data.expiresAt) {
+        status.innerText = "Account expired.";
+        return;
+      }
+
+      const deviceId = localStorage.getItem("device_id") || crypto.randomUUID();
+      localStorage.setItem("device_id", deviceId);
+
+      if (data.deviceId && data.deviceId !== deviceId) {
+        status.innerText = "Login allowed only on one device.";
+        return;
+      }
+
+      await db.ref("users/" + username + "/deviceId").set(deviceId);
+      window.location.href = "dashboard.html";
     }
-
-    function register() {
-      const email = document.getElementById("regEmail").value;
-      const password = document.getElementById("regPassword").value;
-      const phone = document.getElementById("regPhone").value;
-
-      firebase.auth().createUserWithEmailAndPassword(email, password)
-        .then(userCredential => {
-          const uid = userCredential.user.uid;
-          return firebase.database().ref("users/" + uid).set({
-            email: email,
-            phone: phone
-          });
-        })
-        .then(() => {
-          alert("Registered Successfully! Please login.");
-        })
-        .catch(error => {
-          alert("Registration Failed: " + error.message);
-        });
-    }
-  </script>
+</script>
 </body>
 </html>
