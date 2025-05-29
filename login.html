@@ -3,190 +3,156 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <title>Login | Mines</title>
   <style>
     * {
-      margin: 0;
-      padding: 0;
-      font-family: 'Poppins', sans-serif;
       box-sizing: border-box;
     }
 
-    body, html {
-      height: 100%;
-      overflow: hidden;
-      background: #0f0f0f;
-    }
-
-    canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: 0;
-    }
-
-    .container {
-      position: relative;
-      z-index: 2;
-      height: 100%;
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #0f0f0f, #1e1e1e);
       display: flex;
       justify-content: center;
       align-items: center;
-      backdrop-filter: blur(5px);
+      height: 100vh;
+      color: #ffffff;
+      padding: 20px;
     }
 
-    .login-card {
-      background: rgba(255, 255, 255, 0.08);
-      padding: 40px 30px;
-      border-radius: 20px;
-      width: 90%;
-      max-width: 400px;
+    .form-container {
+      width: 100%;
+      max-width: 360px;
+      background-color: #2c2c2c;
+      padding: 30px;
+      border-radius: 16px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
-    h2 {
+    .form-container h2 {
       text-align: center;
-      color: #fff;
-      margin-bottom: 25px;
+      margin-bottom: 24px;
+      color: #00cec9;
     }
 
     .input-group {
-      display: flex;
-      align-items: center;
-      background: rgba(255, 255, 255, 0.1);
-      padding: 12px;
-      border-radius: 12px;
-      margin-bottom: 15px;
-    }
-
-    .input-group i {
-      margin-right: 10px;
-      color: #fff;
+      margin-bottom: 16px;
+      position: relative;
     }
 
     .input-group input {
-      flex: 1;
-      background: transparent;
+      width: 100%;
+      padding: 12px 12px 12px 40px;
       border: none;
-      outline: none;
+      border-radius: 8px;
+      background-color: #404040;
       color: #fff;
-      font-size: 16px;
+      font-size: 15px;
     }
 
-    .input-group input::placeholder {
+    .input-group i {
+      position: absolute;
+      top: 50%;
+      left: 12px;
+      transform: translateY(-50%);
       color: #ccc;
     }
 
     button {
       width: 100%;
       padding: 12px;
-      border: none;
-      border-radius: 12px;
+      background-color: #00b894;
+      color: #fff;
       font-size: 16px;
-      font-weight: bold;
-      color: #000;
-      background: #00ffc8;
+      border: none;
+      border-radius: 8px;
       cursor: pointer;
-      transition: background 0.3s;
+      transition: 0.3s ease;
     }
 
     button:hover {
-      background: #00cfa4;
+      background-color: #009e82;
     }
 
-    .telegram-btn {
-      margin-top: 15px;
-      width: 100%;
-      background: #0088cc;
-      color: white;
-    }
-
-    .status {
+    p {
       text-align: center;
-      color: red;
-      margin-top: 10px;
+      margin-top: 16px;
       font-size: 14px;
     }
+
+    a {
+      color: #00cec9;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 400px) {
+      .form-container {
+        padding: 20px;
+      }
+
+      .form-container h2 {
+        font-size: 20px;
+      }
+    }
   </style>
-</head>
-<body>
-  <canvas id="fireworks"></canvas>
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-  <div class="container">
-    <div class="login-card">
-      <h2>Ashura Login</h2>
-      <div class="input-group">
-        <i>👤</i>
-        <input type="text" id="username" placeholder="Username">
-      </div>
-      <div class="input-group">
-        <i>🔒</i>
-        <input type="password" id="password" placeholder="Password">
-      </div>
-      <button onclick="login()">Login</button>
-      <button class="telegram-btn" onclick="window.open('https://t.me/yourtelegramusername', '_blank')">Join Telegram</button>
-      <div class="status" id="status"></div>
-    </div>
-  </div>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-  <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyDn8kz-xGV0JAjL8gZjBFR5cR7bCFKga0E",
+      apiKey: "AIzaSyCQRhzJWx2XYIdM30681Zoc6QI_t-IhzNw",
       authDomain: "ashurastore.firebaseapp.com",
       databaseURL: "https://ashurastore-default-rtdb.firebaseio.com",
       projectId: "ashurastore",
-      storageBucket: "ashurastore.appspot.com",
-      messagingSenderId: "581123623408",
-      appId: "1:581123623408:web:21a7edff6c8055fbb4f232"
+      storageBucket: "ashurastore.firebasestorage.app",
+      messagingSenderId: "860052192821",
+      appId: "1:860052192821:android:3b6739051a144ed25cbb7c"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
-    async function login() {
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value.trim();
-      const status = document.getElementById("status");
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById("loginBtn").addEventListener("click", async () => {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
 
-      if (!username || !password) {
-        status.innerText = "Enter both username and password.";
-        return;
-      }
+        try {
+          const userCredential = await signInWithEmailAndPassword(auth, email, password);
+          alert("Login successful!");
+          window.location.href = "dashboard.html";
+        } catch (error) {
+          alert("Login failed: " + error.message);
+        }
+      });
+    });
+  </script>
+  <!-- Font Awesome for icons -->
+  <script src="https://kit.fontawesome.com/a2d812bcb6.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div class="form-container">
+    <h2>🔐 Login to Mines</h2>
 
-      const snapshot = await db.ref("users/" + username).once("value");
-      const data = snapshot.val();
+    <div class="input-group">
+      <i class="fas fa-envelope"></i>
+      <input type="email" id="email" placeholder="Email" />
+    </div>
 
-      if (!data) {
-        status.innerText = "User not found.";
-        return;
-      }
+    <div class="input-group">
+      <i class="fas fa-lock"></i>
+      <input type="password" id="password" placeholder="Password" />
+    </div>
 
-      if (data.password !== password) {
-        status.innerText = "Incorrect password.";
-        return;
-      }
+    <button id="loginBtn">Login</button>
 
-      if (Date.now() > data.expiresAt) {
-        status.innerText = "Account expired.";
-        return;
-      }
-
-      const deviceId = localStorage.getItem("device_id") || crypto.randomUUID();
-      localStorage.setItem("device_id", deviceId);
-
-      if (data.deviceId && data.deviceId !== deviceId) {
-        status.innerText = "Login allowed only on one device.";
-        return;
-      }
-
-      await db.ref("users/" + username + "/deviceId").set(deviceId);
-      window.location.href = "dashboard.html";
-    }
-</script>
+    <p>Don't have an account? <a href="register.html">Register here</a></p>
+  </div>
 </body>
 </html>
