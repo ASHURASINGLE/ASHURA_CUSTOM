@@ -132,10 +132,8 @@
   </div>
 
   <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDn8kz-xGV0JAjL8gZjBFR5cR7bCFKga0E",
@@ -149,150 +147,57 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const auth = firebase.auth();
 
     async function login() {
       const username = document.getElementById("username").value.trim();
       const password = document.getElementById("password").value.trim();
       const status = document.getElementById("status");
 
+      status.innerText = "";
+
       if (!username || !password) {
         status.innerText = "Enter both username and password.";
         return;
       }
 
-      const snapshot = await db.ref("users/" + username).get();
-      const data = snapshot.val();
+      try {
+        const snapshot = await db.ref("users/" + username).once("value");
+        const data = snapshot.val();
 
-      if (!data) {
-        status.innerText = "User not found.";
-        return;
+        if (!data) {
+          status.innerText = "User not found.";
+          return;
+        }
+
+        if (data.password !== password) {
+          status.innerText = "Incorrect password.";
+          return;
+        }
+
+        if (Date.now() > data.expiresAt) {
+          status.innerText = "Account expired.";
+          return;
+        }
+
+        const deviceId = localStorage.getItem("device_id") || crypto.randomUUID();
+        localStorage.setItem("device_id", deviceId);
+
+        if (data.deviceId && data.deviceId !== deviceId) {
+          status.innerText = "Login allowed only on one device.";
+          return;
+        }
+
+        await db.ref("users/" + username + "/deviceId").set(deviceId);
+        localStorage.setItem("currentUser", username); // Save for dashboard access
+
+        window.location.href = "dashboard.html";
+      } catch (error) {
+        console.error("Login error:", error);
+        status.innerText = "Login failed. Please try again.";
       }
-
-      if (data.password !== password) {
-        status.innerText = "Incorrect password.";
-        return;
-      }
-
-      if (Date.now() > data.expiresAt) {
-        status.innerText = "Account expired.";
-        return;
-      }
-
-      const deviceId = localStorage.getItem("device_id") || crypto.randomUUID();
-      localStorage.setItem("device_id", deviceId);
-
-      if (data.deviceId && data.deviceId !== deviceId) {
-        status.innerText = "Login allowed only on one device.";
-        return;
-      }
-
-      await db.ref("users/" + username + "/deviceId").set(deviceId);
-
-      // Sign in anonymously to use Firebase Auth session check on dashboard
-      auth.signInAnonymously()
-        .then(() => {
-          window.location.href = "dashboard.html";
-        })
-        .catch(error => {
-          console.error("Firebase Auth error:", error);
-          status.innerText = "Login failed. Try again.";
-        });
     }
   </script>
 
-  <!-- Fireworks Canvas Animation -->
-  <script>
-    const canvas = document.getElementById('fireworks');
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const fireworks = [];
-
-    class Firework {
-      constructor() {
-        this.x = Math.random() * canvas.width;
-        this.y = canvas.height;
-        this.targetY = Math.random() * canvas.height / 2;
-        this.speed = Math.random() * 3 + 2;
-        this.brightness = Math.random() * 255;
-        this.exploded = false;
-        this.particles = [];
-      }
-
-      update() {
-        if (!this.exploded) {
-          this.y -= this.speed;
-          if (this.y <= this.targetY) {
-            this.exploded = true;
-            for (let i = 0; i < 20; i++) {
-              this.particles.push(new Particle(this.x, this.y));
-            }
-          }
-        } else {
-          this.particles.forEach(p => p.update());
-        }
-      }
-
-      draw() {
-        if (!this.exploded) {
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
-          ctx.fillStyle = `rgb(${this.brightness},${this.brightness},255)`;
-          ctx.fill();
-        } else {
-          this.particles.forEach(p => p.draw());
-        }
-      }
-    }
-
-    class Particle {
-      constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.speedX = (Math.random() - 0.5) * 5;
-        this.speedY = (Math.random() - 0.5) * 5;
-        this.alpha = 1;
-      }
-
-      update() {
-        this.x += this.speedX;
-        this.y += this.speedY;
-        this.alpha -= 0.02;
-      }
-
-      draw() {
-        ctx.save();
-        ctx.globalAlpha = this.alpha;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
-        ctx.fillStyle = 'white';
-        ctx.fill();
-        ctx.restore();
-      }
-    }
-
-    function animate() {
-      ctx.fillStyle = 'rgba(0,0,0,0.2)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      if (Math.random() < 0.05) {
-        fireworks.push(new Firework());
-      }
-
-      fireworks.forEach((fw, i) => {
-        fw.update();
-        fw.draw();
-        if (fw.exploded && fw.particles.every(p => p.alpha <= 0)) {
-          fireworks.splice(i, 1);
-        }
-      });
-
-      requestAnimationFrame(animate);
-    }
-
-    animate();
-  </script>
+  <!-- Optional Fireworks animation (You can plug in your existing script here) -->
 </body>
 </html>
