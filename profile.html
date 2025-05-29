@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Profile</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #1f1f1f, #111);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    .card {
+      background: #2d2d2d;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: url('https://cdn-icons-png.flaticon.com/512/149/149071.png') no-repeat center;
+      background-size: cover;
+      margin: 0 auto 20px;
+    }
+
+    h2 {
+      margin: 10px 0;
+      color: #00cec9;
+    }
+
+    p {
+      margin: 5px 0;
+      font-size: 16px;
+      color: #ccc;
+    }
+
+    .btn {
+      margin-top: 20px;
+      padding: 12px 20px;
+      background: #00cec9;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    @media (max-width: 500px) {
+      .card {
+        padding: 20px;
+      }
+
+      .avatar {
+        width: 80px;
+        height: 80px;
+      }
+    }
+  </style>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQRhzJWx2XYIdM30681Zoc6QI_t-IhzNw",
+      authDomain: "ashurastore.firebaseapp.com",
+      databaseURL: "https://ashurastore-default-rtdb.firebaseio.com",
+      projectId: "ashurastore",
+      storageBucket: "ashurastore.firebasestorage.app",
+      messagingSenderId: "860052192821",
+      appId: "1:860052192821:android:3b6739051a144ed25cbb7c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    const usernameText = document.getElementById("username");
+    const emailText = document.getElementById("email");
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const userId = user.uid;
+        const snapshot = await get(ref(db, "users/" + userId));
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          document.getElementById("username").textContent = data.username || "N/A";
+          document.getElementById("email").textContent = user.email;
+        }
+      } else {
+        alert("Please log in first.");
+        window.location.href = "login.html";
+      }
+    });
+
+    window.logout = () => {
+      signOut(auth).then(() => {
+        window.location.href = "login.html";
+      });
+    };
+  </script>
+</head>
+<body>
+  <div class="card">
+    <div class="avatar"></div>
+    <h2 id="username">Username</h2>
+    <p id="email">Email</p>
+    <button class="btn" onclick="logout()">Logout</button>
+  </div>
+</body>
+</html>
