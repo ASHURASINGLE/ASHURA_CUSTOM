@@ -153,51 +153,40 @@
       const password = document.getElementById("password").value.trim();
       const status = document.getElementById("status");
 
-      status.innerText = "";
-
       if (!username || !password) {
         status.innerText = "Enter both username and password.";
         return;
       }
 
-      try {
-        const snapshot = await db.ref("users/" + username).once("value");
-        const data = snapshot.val();
+      const snapshot = await db.ref("users/" + username).once("value");
+      const data = snapshot.val();
 
-        if (!data) {
-          status.innerText = "User not found.";
-          return;
-        }
-
-        if (data.password !== password) {
-          status.innerText = "Incorrect password.";
-          return;
-        }
-
-        if (Date.now() > data.expiresAt) {
-          status.innerText = "Account expired.";
-          return;
-        }
-
-        const deviceId = localStorage.getItem("device_id") || crypto.randomUUID();
-        localStorage.setItem("device_id", deviceId);
-
-        if (data.deviceId && data.deviceId !== deviceId) {
-          status.innerText = "Login allowed only on one device.";
-          return;
-        }
-
-        await db.ref("users/" + username + "/deviceId").set(deviceId);
-        localStorage.setItem("currentUser", username); // Save for dashboard access
-
-        window.location.href = "dashboard.html";
-      } catch (error) {
-        console.error("Login error:", error);
-        status.innerText = "Login failed. Please try again.";
+      if (!data) {
+        status.innerText = "User not found.";
+        return;
       }
-    }
-  </script>
 
-  <!-- Optional Fireworks animation (You can plug in your existing script here) -->
+      if (data.password !== password) {
+        status.innerText = "Incorrect password.";
+        return;
+      }
+
+      if (Date.now() > data.expiresAt) {
+        status.innerText = "Account expired.";
+        return;
+      }
+
+      const deviceId = localStorage.getItem("device_id") || crypto.randomUUID();
+      localStorage.setItem("device_id", deviceId);
+
+      if (data.deviceId && data.deviceId !== deviceId) {
+        status.innerText = "Login allowed only on one device.";
+        return;
+      }
+
+      await db.ref("users/" + username + "/deviceId").set(deviceId);
+      window.location.href = "dashboard.html";
+    }
+</script>
 </body>
 </html>
