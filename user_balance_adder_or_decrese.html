@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>User Balance Manager - Admin</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #121212;
+      color: #eee;
+      padding: 30px 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      user-select: none;
+    }
+    h1 {
+      color: #00cec9;
+      margin-bottom: 40px;
+      user-select: none;
+      text-align: center;
+    }
+    form {
+      background: #1e1e1e;
+      padding: 30px 25px;
+      border-radius: 14px;
+      box-shadow: 0 0 15px #00cec9aa;
+      width: 100%;
+      max-width: 400px;
+      box-sizing: border-box;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      user-select: none;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      border: none;
+      font-size: 1rem;
+      background: #121212;
+      color: #eee;
+      box-sizing: border-box;
+      outline: none;
+      user-select: text;
+    }
+    input::placeholder {
+      color: #999;
+    }
+    button {
+      background: #00cec9;
+      border: none;
+      color: #121212;
+      padding: 14px 0;
+      width: 100%;
+      font-weight: 700;
+      font-size: 1.1rem;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      user-select: none;
+    }
+    button:hover {
+      background: #00b3ae;
+    }
+    .result {
+      margin-top: 30px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-align: center;
+      min-height: 2rem;
+      user-select: none;
+    }
+    @media (max-width: 480px) {
+      form {
+        padding: 25px 20px;
+      }
+      button {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>User Balance Manager</h1>
+  <form id="balanceForm" aria-label="User balance add or decrease form">
+    <label for="username">Username</label>
+    <input id="username" name="username" type="text" placeholder="Enter username" required autocomplete="off" />
+    
+    <label for="amount">Amount (₹)</label>
+    <input id="amount" name="amount" type="number" min="1" placeholder="Enter amount" required />
+    
+    <label for="action">Action</label>
+    <select id="action" name="action" required>
+      <option value="" disabled selected>Select action</option>
+      <option value="add">Add Balance</option>
+      <option value="decrease">Decrease Balance</option>
+    </select>
+    
+    <button type="submit">Update Balance</button>
+  </form>
+  
+  <div class="result" id="resultMessage" aria-live="polite" role="status"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, get, update, query, orderByChild, equalTo, limitToFirst } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQRhzJWx2XYIdM30681Zoc6QI_t-IhzNw",
+      authDomain: "ashurastore.firebaseapp.com",
+      databaseURL: "https://ashurastore-default-rtdb.firebaseio.com",
+      projectId: "ashurastore",
+      storageBucket: "ashurastore.firebasestorage.app",
+      messagingSenderId: "860052192821",
+      appId: "1:860052192821:android:3b6739051a144ed25cbb7c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+
+    const form = document.getElementById('balanceForm');
+    const resultMessage = document.getElementById('resultMessage');
+
+    onAuthStateChanged(auth, user => {
+      if (!user) {
+        alert("Please login as admin.");
+        window.location.href = "login.html";
+      } else if (!user.email.endsWith("@admin.com")) {
+        alert("Access denied. Admins only.");
+        window.location.href = "login.html";
+      }
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      resultMessage.textContent = "";
+
+      const username = form.username.value.trim();
+      const amount = Number(form.amount.value);
+      const action = form.action.value;
+
+      if (!username || !amount || !action) {
+        resultMessage.textContent = "Please fill in all fields correctly.";
+        return;
+      }
+      if (amount <= 0) {
+        resultMessage.textContent = "Amount must be positive.";
+        return;
+      }
+
+      try {
+        // Find user by username
+        const usersRef = ref(db, "users");
+        const userQuery = query(usersRef, orderByChild("username"), equalTo(username), limitToFirst(1));
+        const snapshot = await get(userQuery);
+
+        if (!snapshot.exists()) {
+          resultMessage.textContent = "User not found.";
+          return;
+        }
+
+        let userKey = null;
+        snapshot.forEach(childSnap => {
+          userKey = childSnap.key;
+        });
+
+        if (!userKey) {
+          resultMessage.textContent = "User not found.";
+          return;
+        }
+
+        const userRef = ref(db, `users/${userKey}`);
+
+        // Get current balance
+        const userSnapshot = await get(userRef);
+        let currentBalance = userSnapshot.val()?.balance || 0;
+
+        let newBalance;
+        if (action === "add") {
+          newBalance = currentBalance + amount;
+        } else {
+          newBalance = currentBalance - amount;
+          if (newBalance < 0) newBalance = 0; // No negative balance
+        }
+
+        // Update balance
+        await update(userRef, { balance: newBalance });
+
+        resultMessage.textContent = `Success! User "${username}" balance updated to ₹${newBalance.toLocaleString()}.`;
+        form.reset();
+      } catch (error) {
+        console.error(error);
+        resultMessage.textContent = "Error updating balance. Try again.";
+      }
+    });
+  </script>
+</body>
+</html>
