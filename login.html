@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      box-sizing: border-box;
+    }
+
+    body, html {
+      height: 100%;
+      overflow: hidden;
+      background: #0f0f0f;
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 2;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(5px);
+    }
+
+    .login-card {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 40px 30px;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    h2 {
+      text-align: center;
+      color: #fff;
+      margin-bottom: 25px;
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 12px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+    }
+
+    .input-group i {
+      margin-right: 10px;
+      color: #fff;
+    }
+
+    .input-group input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    .input-group input::placeholder {
+      color: #ccc;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #000;
+      background: #00ffc8;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #00cfa4;
+    }
+
+    .telegram-btn {
+      margin-top: 15px;
+      width: 100%;
+      background: #0088cc;
+      color: white;
+    }
+
+    .status {
+      text-align: center;
+      color: red;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="fireworks"></canvas>
+
+  <div class="container">
+    <div class="login-card">
+      <h2>Ashura Login</h2>
+      <div class="input-group">
+        <i>👤</i>
+        <input type="text" id="username" placeholder="Username">
+      </div>
+      <div class="input-group">
+        <i>🔒</i>
+        <input type="password" id="password" placeholder="Password">
+      </div>
+      <button onclick="login()">Login</button>
+      <button class="telegram-btn" onclick="window.open('https://t.me/yourtelegramusername', '_blank')">Join Telegram</button>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDn8kz-xGV0JAjL8gZjBFR5cR7bCFKga0E",
+      authDomain: "ashurastore.firebaseapp.com",
+      databaseURL: "https://ashurastore-default-rtdb.firebaseio.com",
+      projectId: "ashurastore",
+      storageBucket: "ashurastore.appspot.com",
+      messagingSenderId: "581123623408",
+      appId: "1:581123623408:web:21a7edff6c8055fbb4f232"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    async function login() {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const status = document.getElementById("status");
+
+      if (!username || !password) {
+        status.innerText = "Enter both username and password.";
+        return;
+      }
+
+      const snapshot = await db.ref("users/" + username).once("value");
+      const data = snapshot.val();
+
+      if (!data) {
+        status.innerText = "User not found.";
+        return;
+      }
+
+      if (data.password !== password) {
+        status.innerText = "Incorrect password.";
+        return;
+      }
+
+      if (Date.now() > data.expiresAt) {
+        status.innerText = "Account expired.";
+        return;
+      }
+
+      const deviceId = localStorage.getItem("device_id") || crypto.randomUUID();
+      localStorage.setItem("device_id", deviceId);
+
+      if (data.deviceId && data.deviceId !== deviceId) {
+        status.innerText = "Login allowed only on one device.";
+        return;
+      }
+
+      await db.ref("users/" + username + "/deviceId").set(deviceId);
+      window.location.href = "dashboard.html";
+    }
+</script>
+</body>
+</html>
