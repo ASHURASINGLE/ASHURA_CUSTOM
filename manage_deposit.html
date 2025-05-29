@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Manage Deposits - Admin</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #121212;
+      color: #eee;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    h1 {
+      color: #00cec9;
+      text-align: center;
+      margin-bottom: 30px;
+      user-select: none;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      box-shadow: 0 0 15px #00cec9aa;
+      border-radius: 12px;
+      overflow: hidden;
+      user-select: none;
+    }
+    thead {
+      background: #00cec9;
+      color: #121212;
+    }
+    th, td {
+      padding: 14px 18px;
+      text-align: left;
+      border-bottom: 1px solid #333;
+    }
+    tbody tr:hover {
+      background: #222;
+    }
+    button {
+      background: #00cec9;
+      border: none;
+      color: #121212;
+      padding: 8px 14px;
+      margin-right: 8px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.25s ease;
+      user-select: none;
+    }
+    button:hover {
+      background: #00b3ae;
+    }
+    button.reject {
+      background: #e84118;
+      color: #fff;
+    }
+    button.reject:hover {
+      background: #c23616;
+    }
+    .status {
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 12px;
+      display: inline-block;
+      user-select: none;
+    }
+    .pending {
+      background: #ffa502;
+      color: #121212;
+    }
+    .approved {
+      background: #2ecc71;
+      color: white;
+    }
+    .rejected {
+      background: #e84118;
+      color: white;
+    }
+    @media (max-width: 700px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      thead tr {
+        display: none;
+      }
+      tbody tr {
+        margin-bottom: 20px;
+        border-radius: 12px;
+        background: #1f1f1f;
+        padding: 20px;
+      }
+      tbody td {
+        padding-left: 50%;
+        position: relative;
+      }
+      tbody td::before {
+        position: absolute;
+        top: 14px;
+        left: 15px;
+        width: 45%;
+        white-space: nowrap;
+        font-weight: 700;
+        user-select: none;
+      }
+      tbody td:nth-of-type(1)::before { content: "Username"; }
+      tbody td:nth-of-type(2)::before { content: "Amount"; }
+      tbody td:nth-of-type(3)::before { content: "Payment Method"; }
+      tbody td:nth-of-type(4)::before { content: "UPI ID"; }
+      tbody td:nth-of-type(5)::before { content: "Transaction ID"; }
+      tbody td:nth-of-type(6)::before { content: "Status"; }
+      tbody td:nth-of-type(7)::before { content: "Actions"; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Manage Deposit Requests</h1>
+  <table aria-live="polite" aria-label="List of deposit requests">
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Amount (₹)</th>
+        <th>Payment Method</th>
+        <th>UPI ID</th>
+        <th>Transaction ID</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="depositsTableBody">
+      <tr><td colspan="7" style="text-align:center;">Loading deposit requests...</td></tr>
+    </tbody>
+  </table>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQRhzJWx2XYIdM30681Zoc6QI_t-IhzNw",
+      authDomain: "ashurastore.firebaseapp.com",
+      databaseURL: "https://ashurastore-default-rtdb.firebaseio.com",
+      projectId: "ashurastore",
+      storageBucket: "ashurastore.firebasestorage.app",
+      messagingSenderId: "860052192821",
+      appId: "1:860052192821:android:3b6739051a144ed25cbb7c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+
+    const depositsTableBody = document.getElementById('depositsTableBody');
+
+    onAuthStateChanged(auth, user => {
+      if (!user) {
+        alert("Please login as admin.");
+        window.location.href = "login.html";
+      } else if (!user.email.endsWith("@admin.com")) {
+        alert("Access denied. Admins only.");
+        window.location.href = "login.html";
+      } else {
+        loadDeposits();
+      }
+    });
+
+    function loadDeposits() {
+      const depositsRef = ref(db, 'depositRequests');
+      onValue(depositsRef, (snapshot) => {
+        const deposits = snapshot.val();
+        depositsTableBody.innerHTML = '';
+
+        if (!deposits) {
+          depositsTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No deposit requests found.</td></tr>`;
+          return;
+        }
+
+        Object.entries(deposits).forEach(([reqId, data]) => {
+          const tr = document.createElement('tr');
+
+          const username = data.username || "(no username)";
+          const amount = data.amount || 0;
+          const method = data.paymentMethod || "(no method)";
+          const upi = data.upiId || "(no UPI)";
+          const txnId = data.transactionId || "(no txn)";
+          const status = data.status || "pending";
+
+          tr.innerHTML = `
+            <td>${username}</td>
+            <td>₹${amount.toLocaleString()}</td>
+            <td>${method}</td>
+            <td>${upi}</td>
+            <td>${txnId}</td>
+            <td><span class="status ${status}">${capitalize(status)}</span></td>
+            <td>
+              ${status === "pending"
+                ? `<button onclick="approveDeposit('${reqId}', '${username}', ${amount})">Approve</button>
+                   <button class="reject" onclick="rejectDeposit('${reqId}')">Reject</button>`
+                : `<em>No actions</em>`
+              }
+            </td>
+          `;
+
+          depositsTableBody.appendChild(tr);
+        });
+      });
+    }
+
+    function capitalize(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    window.approveDeposit = function(reqId, username, amount) {
+      if(confirm(`Approve deposit of ₹${amount} for user "${username}"?`)) {
+        const requestRef = ref(db, 'depositRequests/' + reqId);
+        update(requestRef, { status: 'approved' })
+          .then(() => {
+            alert("Deposit approved.");
+            // TODO: Add the deposit amount to the user's balance
+          })
+          .catch(err => alert("Error approving deposit: " + err.message));
+      }
+    }
+
+    window.rejectDeposit = function(reqId) {
+      if(confirm("Reject this deposit request?")) {
+        const requestRef = ref(db, 'depositRequests/' + reqId);
+        update(requestRef, { status: 'rejected' })
+          .then(() => alert("Deposit rejected."))
+          .catch(err => alert("Error rejecting deposit: " + err.message));
+      }
+    }
+  </script>
+</body>
+</html>
