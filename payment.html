@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Deposit Payment</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #1c1c1c, #111);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    .card {
+      background: #2d2d2d;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+      max-width: 450px;
+      width: 100%;
+      text-align: center;
+    }
+
+    h2 {
+      color: #00cec9;
+      margin-bottom: 20px;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+    }
+
+    .upi-id {
+      background: #3a3a3a;
+      color: #00e676;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .btn {
+      margin-top: 20px;
+      padding: 12px 20px;
+      background: #00cec9;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .btn:hover {
+      background: #00b3ae;
+    }
+
+    @media (max-width: 500px) {
+      .card {
+        padding: 20px;
+      }
+    }
+  </style>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQRhzJWx2XYIdM30681Zoc6QI_t-IhzNw",
+      authDomain: "ashurastore.firebaseapp.com",
+      databaseURL: "https://ashurastore-default-rtdb.firebaseio.com",
+      projectId: "ashurastore",
+      storageBucket: "ashurastore.firebasestorage.app",
+      messagingSenderId: "860052192821",
+      appId: "1:860052192821:android:3b6739051a144ed25cbb7c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    let currentUser = null;
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentUser = user;
+      } else {
+        alert("Please login first.");
+        window.location.href = "login.html";
+      }
+    });
+
+    window.updateUPI = function () {
+      const method = document.getElementById("method").value;
+      const upiText = document.getElementById("upiText");
+      const upiBox = document.getElementById("upiBox");
+
+      if (method === "Paytm") upiText.innerText = "paytm@upi";
+      else if (method === "PhonePe") upiText.innerText = "phonepe@upi";
+      else if (method === "GooglePay") upiText.innerText = "gpay@upi";
+      else upiText.innerText = "upi@default";
+
+      upiBox.style.display = "block";
+    };
+
+    window.submitDeposit = function () {
+      const method = document.getElementById("method").value;
+      const txn = document.getElementById("txn").value;
+
+      if (!method || !txn || !currentUser) {
+        alert("Please fill all fields.");
+        return;
+      }
+
+      const depositRef = ref(db, `depositRequests/${currentUser.uid}`);
+      set(depositRef, {
+        method: method,
+        transactionId: txn,
+        timestamp: Date.now(),
+        status: "pending"
+      }).then(() => {
+        alert("Deposit request submitted.");
+        window.location.href = "dashboard.html";
+      }).catch((error) => {
+        alert("Error: " + error.message);
+      });
+    };
+  </script>
+</head>
+<body>
+  <div class="card">
+    <h2>Deposit Payment</h2>
+
+    <select id="method" onchange="updateUPI()">
+      <option value="">Select Payment Method</option>
+      <option value="Paytm">Paytm</option>
+      <option value="PhonePe">PhonePe</option>
+      <option value="GooglePay">Google Pay</option>
+      <option value="UPI">UPI</option>
+    </select>
+
+    <div class="upi-id" id="upiBox">
+      UPI ID: <span id="upiText">upi@default</span>
+    </div>
+
+    <input id="txn" type="text" placeholder="Enter Transaction ID"/>
+
+    <button class="btn" onclick="submitDeposit()">Submit</button>
+  </div>
+</body>
+</html>
