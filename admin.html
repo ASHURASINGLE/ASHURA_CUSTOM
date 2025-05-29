@@ -1,259 +1,243 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" >
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Dashboard</title>
   <style>
+    /* Reset & base */
+    * {
+      box-sizing: border-box;
+    }
     body {
       margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to bottom right, #0f2027, #203a43, #2c5364);
-      color: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #121212;
+      color: #eee;
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
       min-height: 100vh;
-      padding-top: 40px;
+      overflow-x: hidden;
     }
 
-    .panel {
-      width: 90%;
-      max-width: 420px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      padding: 30px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    /* Sidebar */
+    #sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 250px;
+      background: #1f1f1f;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.7);
+      transform: translateX(0);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
     }
 
-    h2 {
+    #sidebar.closed {
+      transform: translateX(-100%);
+    }
+
+    #sidebar header {
+      padding: 20px;
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: #00cec9;
+      color: #121212;
       text-align: center;
-      margin-bottom: 20px;
-      color: #fff;
+      letter-spacing: 2px;
+      user-select: none;
     }
 
-    .input-group {
+    #sidebar nav {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0;
+    }
+
+    #sidebar nav a {
+      color: #eee;
+      text-decoration: none;
+      padding: 15px 25px;
+      font-weight: 600;
+      transition: background-color 0.2s ease;
+      user-select: none;
+    }
+    #sidebar nav a:hover {
+      background: #00cec9;
+      color: #121212;
+    }
+
+    #sidebar .close-btn {
+      background: transparent;
+      border: none;
+      color: #eee;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 10px 20px;
+      align-self: flex-end;
+      user-select: none;
+    }
+    #sidebar .close-btn:hover {
+      color: #00cec9;
+    }
+
+    /* Main content */
+    #main {
+      flex-grow: 1;
+      margin-left: 250px;
+      padding: 30px 40px;
+      transition: margin-left 0.3s ease;
+    }
+    #main.full-width {
+      margin-left: 0;
+    }
+
+    /* Top bar */
+    #topbar {
       display: flex;
       align-items: center;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-      margin-bottom: 15px;
-      padding: 10px;
+      justify-content: space-between;
+      margin-bottom: 40px;
     }
-
-    .input-group i {
-      margin-right: 10px;
-      font-size: 18px;
-    }
-
-    .input-group input, select {
-      border: none;
-      outline: none;
-      background: transparent;
-      color: white;
-      font-size: 16px;
-      flex: 1;
-    }
-
-    .input-group input::placeholder {
-      color: #ccc;
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      background: #00cba9;
-      border: none;
-      border-radius: 12px;
-      font-weight: bold;
-      font-size: 16px;
-      color: black;
-      margin-top: 10px;
+    #menu-toggle {
+      font-size: 1.8rem;
       cursor: pointer;
-      transition: background 0.3s;
+      color: #00cec9;
+      user-select: none;
     }
 
-    button:hover {
-      background: #00b398;
+    /* Stats card */
+    .stats-card {
+      background: #1f1f1f;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 0 30px #00cec9aa;
+      text-align: center;
+      max-width: 400px;
+      margin: 0 auto;
+      user-select: none;
+    }
+    .stats-card h3 {
+      font-size: 2rem;
+      margin-bottom: 15px;
+      color: #00cec9;
+      letter-spacing: 1.2px;
+    }
+    .stats-card p {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #eee;
     }
 
-    .stats, .user-list {
-      background: rgba(255, 255, 255, 0.07);
-      padding: 15px;
-      border-radius: 10px;
-      margin-top: 20px;
-    }
-
-    .user-item {
-      background: rgba(255, 255, 255, 0.05);
-      padding: 8px 12px;
-      border-radius: 8px;
-      margin-bottom: 8px;
-      font-size: 15px;
-      line-height: 1.5;
-    }
-
-    .user-item span {
-      display: block;
-      font-size: 13px;
-      color: #ddd;
-    }
-
-    .user-item button {
-      background: #ff4d4d;
-      color: white;
-      font-size: 13px;
-      margin-top: 6px;
-      width: auto;
-      padding: 6px 10px;
-      margin-right: 6px;
-    }
-
-    .user-item button.edit {
-      background: #1e90ff;
-    }
-
-    .expired {
-      color: #ff4d4d;
-    }
-
-    .active {
-      color: #00ffcc;
+    /* Responsive */
+    @media (max-width: 768px) {
+      #sidebar {
+        transform: translateX(-100%);
+        position: fixed;
+      }
+      #sidebar.open {
+        transform: translateX(0);
+      }
+      #main {
+        margin-left: 0;
+      }
     }
   </style>
-
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 </head>
 <body>
-  <div class="panel">
-    <h2>Admin Panel</h2>
 
-    <div class="input-group">
-      <i>👤</i>
-      <input type="text" id="username" placeholder="Username" />
+  <aside id="sidebar" class="closed">
+    <header>ADMIN PANEL</header>
+    <button class="close-btn" id="closeSidebarBtn" aria-label="Close sidebar">&times;</button>
+    <nav>
+      <a href="manage_users.html">Manage Users</a>
+      <a href="manage_withdrawal.html">Manage Withdrawals</a>
+      <a href="manage_deposit.html">Manage Deposits</a>
+      <a href="users_balance_adder_or_decrese.html">Balance Adjuster</a>
+    </nav>
+  </aside>
+
+  <main id="main" class="full-width">
+    <div id="topbar">
+      <span id="menu-toggle" aria-label="Open sidebar">&#9776;</span>
+      <h1>Admin Dashboard</h1>
+      <div></div> <!-- placeholder for alignment -->
     </div>
 
-    <div class="input-group">
-      <i>🔒</i>
-      <input type="password" id="password" placeholder="Password" />
-    </div>
+    <section class="stats-card" aria-live="polite">
+      <h3>Total Users</h3>
+      <p id="userCount">Loading...</p>
+    </section>
+  </main>
 
-    <div class="input-group">
-      <select id="duration">
-        <option value="1">1 Day</option>
-        <option value="7">1 Week</option>
-        <option value="30">1 Month</option>
-        <option value="365">1 Year</option>
-      </select>
-    </div>
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-    <button onclick="createUser()">Create/Update User</button>
-
-    <div class="stats">
-      <p><strong>Total Users:</strong> <span id="totalUsers">0</span></p>
-      <p><strong>Expired:</strong> <span id="expiredCount">0</span></p>
-    </div>
-
-    <div class="user-list">
-      <h3>User Details</h3>
-      <div id="userList"></div>
-    </div>
-  </div>
-
-  <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyDn8kz-xGV0JAjL8gZjBFR5cR7bCFKga0E",
+      apiKey: "AIzaSyCQRhzJWx2XYIdM30681Zoc6QI_t-IhzNw",
       authDomain: "ashurastore.firebaseapp.com",
       databaseURL: "https://ashurastore-default-rtdb.firebaseio.com",
       projectId: "ashurastore",
-      storageBucket: "ashurastore.appspot.com",
-      messagingSenderId: "581123623408",
-      appId: "1:581123623408:web:21a7edff6c8055fbb4f232"
+      storageBucket: "ashurastore.firebasestorage.app",
+      messagingSenderId: "860052192821",
+      appId: "1:860052192821:android:3b6739051a144ed25cbb7c"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
 
-    function createUser() {
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value.trim();
-      const duration = parseInt(document.getElementById("duration").value);
-
-      if (!username || !password) {
-        alert("Please enter both username and password.");
-        return;
-      }
-
-      const now = Date.now();
-      const expiry = now + duration * 24 * 60 * 60 * 1000;
-
-      db.ref("users/" + username).set({
-        password,
-        createdAt: now,
-        expiresAt: expiry
-      }).then(() => {
-        alert("✅ User saved successfully!");
-        document.getElementById("username").value = "";
-        document.getElementById("password").value = "";
-      }).catch(error => {
-        alert("❌ Error: " + error.message);
-      });
-    }
-
-    function deleteUser(username) {
-      if (confirm(`Are you sure you want to delete user "${username}"?`)) {
-        db.ref("users/" + username).remove();
-      }
-    }
-
-    function editUser(username) {
-      db.ref("users/" + username).once("value", snapshot => {
-        const user = snapshot.val();
-        if (user) {
-          document.getElementById("username").value = username;
-          document.getElementById("password").value = user.password;
+    // Check if logged-in user is admin (you might want to customize this check)
+    onAuthStateChanged(auth, user => {
+      if (!user) {
+        alert("Please login as admin.");
+        window.location.href = "login.html";
+      } else {
+        // Example admin check: user email ends with @admin.com (adjust as needed)
+        if (!user.email.endsWith("@admin.com")) {
+          alert("Access denied. Admins only.");
+          window.location.href = "login.html";
         }
-      });
-    }
+      }
+    });
 
-    function formatDate(ms) {
-      const date = new Date(ms);
-      return date.toLocaleDateString() + " " + date.toLocaleTimeString();
-    }
+    // Sidebar toggle
+    const sidebar = document.getElementById("sidebar");
+    const main = document.getElementById("main");
+    const menuToggle = document.getElementById("menu-toggle");
+    const closeSidebarBtn = document.getElementById("closeSidebarBtn");
 
-    function loadUsers() {
-      db.ref("users").on("value", snapshot => {
-        const data = snapshot.val();
-        const now = Date.now();
-        let total = 0;
-        let expired = 0;
-        let listHTML = "";
+    menuToggle.onclick = () => {
+      sidebar.classList.add("open");
+      sidebar.classList.remove("closed");
+      main.classList.remove("full-width");
+    };
+    closeSidebarBtn.onclick = () => {
+      sidebar.classList.remove("open");
+      sidebar.classList.add("closed");
+      main.classList.add("full-width");
+    };
 
-        for (let user in data) {
-          total++;
-          const userData = data[user];
-          const isExpired = now > userData.expiresAt;
-          if (isExpired) expired++;
+    // Fetch total users count from Firebase
+    const usersRef = ref(db, 'users');
+    const userCountEl = document.getElementById("userCount");
 
-          listHTML += `
-            <div class="user-item">
-              <strong>${user}</strong>
-              <span>Created: ${formatDate(userData.createdAt)}</span>
-              <span>Expires: ${formatDate(userData.expiresAt)}</span>
-              <span>Status: <span class="${isExpired ? 'expired' : 'active'}">${isExpired ? "❌ Expired" : "✅ Active"}</span></span>
-              <button class="edit" onclick="editUser('${user}')">✏️ Edit</button>
-              <button onclick="deleteUser('${user}')">🗑 Delete</button>
-            </div>`;
-        }
-
-        document.getElementById("totalUsers").innerText = total;
-        document.getElementById("expiredCount").innerText = expired;
-        document.getElementById("userList").innerHTML = listHTML || "No users yet.";
-      });
-    }
-
-    loadUsers();
+    onValue(usersRef, snapshot => {
+      if (snapshot.exists()) {
+        const users = snapshot.val();
+        const count = Object.keys(users).length;
+        userCountEl.textContent = count.toLocaleString();
+      } else {
+        userCountEl.textContent = "0";
+      }
+    });
   </script>
+
 </body>
 </html>
