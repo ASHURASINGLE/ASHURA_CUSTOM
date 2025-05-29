@@ -2,252 +2,183 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ASHURA AI</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard</title>
   <style>
-    :root {
-      --bg: #0f0f0f;
-      --card: #1c1c1c;
-      --primary: #8e44ad;
-      --glow: #bb86fc;
-      --text: #fff;
-      --accent: #03dac6;
-      --success: #28a745;
-      --error: #cf6679;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
     body {
-      background-color: var(--bg);
-      font-family: "Poppins", sans-serif;
-      color: var(--text);
-      padding: 20px;
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #000;
+      overflow: hidden;
+      color: #fff;
     }
 
-    h1 {
-      font-family: "Orbitron", sans-serif;
-      text-align: center;
-      font-size: 2.5rem;
-      color: var(--glow);
-      margin-bottom: 20px;
-      text-shadow: 0 0 10px var(--glow);
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0;
     }
 
     .container {
-      max-width: 450px;
-      margin: auto;
-    }
-
-    .notification {
-      text-align: right;
-      margin-bottom: 10px;
-    }
-
-    .notification i {
-      color: var(--accent);
-      font-size: 22px;
+      position: relative;
+      z-index: 1;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .card {
-      background: var(--card);
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: 0 0 20px rgba(187, 134, 252, 0.2);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 30px;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 600px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.4);
+      text-align: center;
+      margin-top: 100px;
+    }
+
+    .card h2 {
       margin-bottom: 20px;
-      animation: fadeIn 0.6s ease-in;
+      font-size: 28px;
+      color: #00ffe7;
     }
 
-    @keyframes fadeIn {
-      from {opacity: 0; transform: translateY(20px);}
-      to {opacity: 1; transform: translateY(0);}
+    .card p {
+      font-size: 18px;
+      color: #f0f0f0;
     }
 
-    .section-title {
-      font-size: 1.3rem;
-      font-weight: bold;
-      color: var(--glow);
-      margin-bottom: 10px;
-    }
-
-    input {
-      width: 100%;
-      padding: 12px;
-      background: #222;
-      color: #fff;
-      border: 1px solid var(--glow);
+    .logout-btn {
+      margin-top: 30px;
+      padding: 12px 20px;
+      background: #ff0055;
+      border: none;
       border-radius: 10px;
-      margin-bottom: 12px;
-      text-align: center;
+      font-size: 16px;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s;
     }
 
-    .ai-box {
-      font-size: 1.5rem;
-      background: var(--accent);
-      color: #000;
-      padding: 10px 20px;
-      border-radius: 12px;
-      font-weight: bold;
-      text-align: center;
-      margin-top: 10px;
-    }
-
-    .single-number {
-      font-size: 1rem;
-      margin-top: 8px;
-      text-align: center;
-    }
-
-    .progress-bar {
-      background: #333;
-      height: 10px;
-      border-radius: 10px;
-      overflow: hidden;
-      margin-top: 15px;
-    }
-
-    .progress-bar-fill {
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(to right, var(--primary), var(--glow));
-      animation: shimmer 2s linear infinite;
-    }
-
-    @keyframes shimmer {
-      0% {transform: translateX(-100%);}
-      100% {transform: translateX(100%);}
-    }
-
-    .footer {
-      text-align: center;
-      color: var(--accent);
-      margin-top: 15px;
-      font-size: 0.9rem;
-    }
-
-    .status-text {
-      text-align: center;
-      font-size: 1rem;
-      font-weight: bold;
-      margin: 10px 0;
-    }
-
-    .status-premium { color: var(--success); }
-    .status-not-premium { color: var(--error); }
-
-    .device-id {
-      text-align: center;
-      margin-bottom: 8px;
+    .logout-btn:hover {
+      background: #e60048;
     }
   </style>
-
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 </head>
 <body>
+  <canvas id="fireworks"></canvas>
+
   <div class="container">
-    <div class="notification"><i class="fas fa-bell"></i></div>
-    <h1>ASHURA AI</h1>
-    <div class="device-id" id="deviceIdDisplay">Device ID: -</div>
-    <div class="status-text" id="statusDisplay">Checking status...</div>
-
-    <div class="card" id="predictionCard" style="display: none;">
-      <div class="section-title">Upcoming AI Prediction</div>
-      <input type="text" id="periodDisplay" value="-" readonly />
-      <input type="text" id="timeDisplay" value="-" readonly />
-      <div class="ai-box" id="aiPrediction">-</div>
-      <div class="single-number" id="singleNumber">Single Number: -</div>
-      <div class="progress-bar"><div class="progress-bar-fill"></div></div>
+    <div class="card">
+      <h2>Welcome to the Dashboard 🎉</h2>
+      <p>You have successfully logged in.</p>
+      <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
-
-    <div class="footer">Dev by ASHURA</div>
   </div>
 
+  <!-- Fireworks Script -->
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCQRhzJWx2XYIdM30681Zoc6QI_t-IhzNw",
-      authDomain: "ashurastore.firebaseapp.com",
-      databaseURL: "https://ashurastore-default-rtdb.firebaseio.com",
-      projectId: "ashurastore",
-      storageBucket: "ashurastore.appspot.com",
-      messagingSenderId: "860052192821",
-      appId: "1:860052192821:web:3b6739051a144ed25cbb7c"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+    const canvas = document.getElementById('fireworks');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-    const deviceId = (() => {
-      let id = localStorage.getItem("deviceId");
-      if (!id) {
-        id = Math.floor(Math.random() * 1000000).toString().padStart(6, "0");
-        localStorage.setItem("deviceId", id);
+    const fireworks = [];
+    const particles = [];
+
+    class Firework {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = canvas.height;
+        this.targetY = Math.random() * canvas.height / 2;
+        this.speed = 5;
+        this.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
       }
-      return id;
-    })();
-
-    document.getElementById("deviceIdDisplay").textContent = "Device ID: " + deviceId;
-    const predictionCard = document.getElementById("predictionCard");
-    const statusDisplay = document.getElementById("statusDisplay");
-
-    let lastPredictedPeriod = -1;
-
-    function getPeriodUTC() {
-      const now = new Date();
-      return now.getUTCHours() * 60 + now.getUTCMinutes();
-    }
-
-    function updateTime() {
-      if (predictionCard.style.display === "none") return;
-
-      const now = new Date();
-      const h = now.getHours().toString().padStart(2, "0");
-      const m = now.getMinutes().toString().padStart(2, "0");
-      const s = now.getSeconds().toString().padStart(2, "0");
-      document.getElementById("timeDisplay").value = `${h}:${m}:${s}`;
-
-      const currentPeriod = getPeriodUTC();
-      const upcomingPeriod = currentPeriod + 1;
-
-      document.getElementById("periodDisplay").value = "Upcoming Period: " + upcomingPeriod;
-
-      if (lastPredictedPeriod !== upcomingPeriod) {
-        lastPredictedPeriod = upcomingPeriod;
-
-        const rand = Math.floor(Math.random() * 10);
-        const prediction = rand >= 5 ? "BIG" : "SMALL";
-        const actualResult = Math.floor(Math.random() * 10);
-
-        document.getElementById("aiPrediction").textContent = prediction;
-        document.getElementById("singleNumber").textContent = "Single Number: " + actualResult;
-      }
-    }
-
-    function checkPremiumStatus() {
-      const ref = database.ref("premiumUsers/" + deviceId);
-      ref.get().then(snapshot => {
-        if (snapshot.exists() && snapshot.val() === true) {
-          statusDisplay.textContent = "Status: Premium";
-          statusDisplay.classList.add("status-premium");
-          predictionCard.style.display = "block";
-          updateTime();
-          setInterval(updateTime, 1000);
-        } else {
-          statusDisplay.textContent = "Status: Not Premium";
-          statusDisplay.classList.add("status-not-premium");
+      update() {
+        this.y -= this.speed;
+        if (this.y <= this.targetY) {
+          this.explode();
+          return false;
         }
-      }).catch(err => {
-        console.error(err);
-        statusDisplay.textContent = "Error checking status";
-      });
+        return true;
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+      }
+      explode() {
+        for (let i = 0; i < 50; i++) {
+          particles.push(new Particle(this.x, this.y, this.color));
+        }
+      }
     }
 
-    checkPremiumStatus();
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.speed = Math.random() * 5 + 1;
+        this.angle = Math.random() * 2 * Math.PI;
+        this.life = 100;
+        this.color = color;
+      }
+      update() {
+        this.x += Math.cos(this.angle) * this.speed;
+        this.y += Math.sin(this.angle) * this.speed;
+        this.life--;
+        return this.life > 0;
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+      }
+    }
+
+    function animate() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      if (Math.random() < 0.05) fireworks.push(new Firework());
+
+      for (let i = fireworks.length - 1; i >= 0; i--) {
+        if (!fireworks[i].update()) {
+          fireworks.splice(i, 1);
+        } else {
+          fireworks[i].draw();
+        }
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        if (!particles[i].update()) {
+          particles.splice(i, 1);
+        } else {
+          particles[i].draw();
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+
+  <script>
+    function logout() {
+      localStorage.removeItem('currentUser');
+      window.location.href = "index.html"; // Change to your login page
+    }
   </script>
 </body>
 </html>
