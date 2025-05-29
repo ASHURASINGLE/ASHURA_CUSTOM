@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Withdraw Request</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #1a1a1a, #111);
+      color: #eee;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      background: #2e2e2e;
+      padding: 30px 40px;
+      border-radius: 16px;
+      box-shadow: 0 0 25px rgba(0,0,0,0.5);
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+    }
+    h2 {
+      color: #00cec9;
+      margin-bottom: 25px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 14px 12px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+      margin-bottom: 20px;
+      background: #3a3a3a;
+      color: #eee;
+    }
+    input[type="text"]::placeholder {
+      color: #bbb;
+    }
+    button {
+      background: #00cec9;
+      color: #fff;
+      font-size: 18px;
+      padding: 14px 0;
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background: #00b3ae;
+    }
+    @media (max-width: 480px) {
+      .container {
+        padding: 25px 20px;
+      }
+    }
+  </style>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQRhzJWx2XYIdM30681Zoc6QI_t-IhzNw",
+      authDomain: "ashurastore.firebaseapp.com",
+      databaseURL: "https://ashurastore-default-rtdb.firebaseio.com",
+      projectId: "ashurastore",
+      storageBucket: "ashurastore.firebasestorage.app",
+      messagingSenderId: "860052192821",
+      appId: "1:860052192821:android:3b6739051a144ed25cbb7c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    let currentUser = null;
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentUser = user;
+      } else {
+        alert("Please log in first.");
+        window.location.href = "login.html";
+      }
+    });
+
+    window.submitWithdraw = () => {
+      const upi = document.getElementById("upi").value.trim();
+      if (!upi) {
+        alert("Please enter your UPI ID.");
+        return;
+      }
+      if (!currentUser) {
+        alert("User not logged in.");
+        return;
+      }
+      const withdrawRef = ref(db, `withdrawRequests/${currentUser.uid}`);
+      push(withdrawRef, {
+        upiId: upi,
+        timestamp: Date.now(),
+        status: "pending"
+      }).then(() => {
+        alert("Withdrawal request submitted successfully.");
+        window.location.href = "dashboard.html";
+      }).catch((error) => {
+        alert("Error submitting request: " + error.message);
+      });
+    };
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h2>Request Withdrawal</h2>
+    <input
+      type="text"
+      id="upi"
+      placeholder="Enter your UPI ID"
+      autocomplete="off"
+    />
+    <button onclick="submitWithdraw()">Submit Request</button>
+  </div>
+</body>
+</html>
