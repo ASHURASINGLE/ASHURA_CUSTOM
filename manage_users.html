@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Manage Users - Admin</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #121212;
+      color: #eee;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    h1 {
+      color: #00cec9;
+      text-align: center;
+      margin-bottom: 30px;
+      user-select: none;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      box-shadow: 0 0 15px #00cec9aa;
+      border-radius: 12px;
+      overflow: hidden;
+      user-select: none;
+    }
+    thead {
+      background: #00cec9;
+      color: #121212;
+    }
+    th, td {
+      padding: 14px 18px;
+      text-align: left;
+      border-bottom: 1px solid #333;
+    }
+    tbody tr:hover {
+      background: #222;
+    }
+    button {
+      background: #00cec9;
+      border: none;
+      color: #121212;
+      padding: 8px 14px;
+      margin-right: 8px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.25s ease;
+      user-select: none;
+    }
+    button:hover {
+      background: #00b3ae;
+    }
+    button.delete {
+      background: #e84118;
+      color: #fff;
+    }
+    button.delete:hover {
+      background: #c23616;
+    }
+    .status {
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 12px;
+      display: inline-block;
+    }
+    .blocked {
+      background: #e84118;
+      color: white;
+    }
+    .active {
+      background: #00cec9;
+      color: #121212;
+    }
+    @media (max-width: 600px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      thead tr {
+        display: none;
+      }
+      tbody tr {
+        margin-bottom: 20px;
+        border-radius: 12px;
+        background: #1f1f1f;
+        padding: 20px;
+      }
+      tbody td {
+        padding-left: 50%;
+        position: relative;
+      }
+      tbody td::before {
+        position: absolute;
+        top: 14px;
+        left: 15px;
+        width: 45%;
+        white-space: nowrap;
+        font-weight: 700;
+        user-select: none;
+      }
+      tbody td:nth-of-type(1)::before { content: "Username"; }
+      tbody td:nth-of-type(2)::before { content: "Email"; }
+      tbody td:nth-of-type(3)::before { content: "Status"; }
+      tbody td:nth-of-type(4)::before { content: "Actions"; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Manage Users</h1>
+  <table aria-live="polite" aria-label="List of registered users">
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="usersTableBody">
+      <tr><td colspan="4" style="text-align:center;">Loading users...</td></tr>
+    </tbody>
+  </table>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQRhzJWx2XYIdM30681Zoc6QI_t-IhzNw",
+      authDomain: "ashurastore.firebaseapp.com",
+      databaseURL: "https://ashurastore-default-rtdb.firebaseio.com",
+      projectId: "ashurastore",
+      storageBucket: "ashurastore.firebasestorage.app",
+      messagingSenderId: "860052192821",
+      appId: "1:860052192821:android:3b6739051a144ed25cbb7c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+
+    const usersTableBody = document.getElementById('usersTableBody');
+
+    // Admin auth check (example)
+    onAuthStateChanged(auth, user => {
+      if (!user) {
+        alert("Please login as admin.");
+        window.location.href = "login.html";
+      } else if (!user.email.endsWith("@admin.com")) {
+        alert("Access denied. Admins only.");
+        window.location.href = "login.html";
+      } else {
+        loadUsers();
+      }
+    });
+
+    function loadUsers() {
+      const usersRef = ref(db, 'users');
+      onValue(usersRef, (snapshot) => {
+        const users = snapshot.val();
+        usersTableBody.innerHTML = ''; // clear loading text
+
+        if (!users) {
+          usersTableBody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No users found.</td></tr>`;
+          return;
+        }
+
+        Object.entries(users).forEach(([uid, userData]) => {
+          const tr = document.createElement('tr');
+
+          const username = userData.username || "(no username)";
+          const email = userData.email || "(no email)";
+          const status = userData.blocked ? "Blocked" : "Active";
+
+          tr.innerHTML = `
+            <td>${username}</td>
+            <td>${email}</td>
+            <td><span class="status ${userData.blocked ? 'blocked' : 'active'}">${status}</span></td>
+            <td>
+              ${userData.blocked
+                ? `<button onclick="unblockUser('${uid}')">Unblock</button>`
+                : `<button onclick="blockUser('${uid}')">Block</button>`
+              }
+              <button class="delete" onclick="deleteUser('${uid}', '${username}')">Delete</button>
+            </td>
+          `;
+          usersTableBody.appendChild(tr);
+        });
+      });
+    }
+
+    window.blockUser = function(uid) {
+      if(confirm("Are you sure you want to block this user?")) {
+        const userRef = ref(db, 'users/' + uid);
+        update(userRef, { blocked: true })
+          .catch(err => alert("Error blocking user: " + err.message));
+      }
+    }
+
+    window.unblockUser = function(uid) {
+      if(confirm("Are you sure you want to unblock this user?")) {
+        const userRef = ref(db, 'users/' + uid);
+        update(userRef, { blocked: false })
+          .catch(err => alert("Error unblocking user: " + err.message));
+      }
+    }
+
+    window.deleteUser = function(uid, username) {
+      if(confirm(`Delete user "${username}"? This action cannot be undone.`)) {
+        const userRef = ref(db, 'users/' + uid);
+        remove(userRef)
+          .catch(err => alert("Error deleting user: " + err.message));
+      }
+    }
+  </script>
+</body>
+</html>
