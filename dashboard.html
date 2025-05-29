@@ -7,7 +7,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <style>
-    /* (your CSS styles remain unchanged) */
     :root {
       --bg: #0f0f0f;
       --card: #1c1c1c;
@@ -18,13 +17,20 @@
       --success: #28a745;
       --error: #cf6679;
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       background-color: var(--bg);
       font-family: "Poppins", sans-serif;
       color: var(--text);
       padding: 20px;
     }
+
     h1 {
       font-family: "Orbitron", sans-serif;
       text-align: center;
@@ -33,18 +39,22 @@
       margin-bottom: 20px;
       text-shadow: 0 0 10px var(--glow);
     }
+
     .container {
       max-width: 450px;
       margin: auto;
     }
+
     .notification {
       text-align: right;
       margin-bottom: 10px;
     }
+
     .notification i {
       color: var(--accent);
       font-size: 22px;
     }
+
     .card {
       background: var(--card);
       border-radius: 20px;
@@ -53,16 +63,19 @@
       margin-bottom: 20px;
       animation: fadeIn 0.6s ease-in;
     }
+
     @keyframes fadeIn {
       from {opacity: 0; transform: translateY(20px);}
       to {opacity: 1; transform: translateY(0);}
     }
+
     .section-title {
       font-size: 1.3rem;
       font-weight: bold;
       color: var(--glow);
       margin-bottom: 10px;
     }
+
     input {
       width: 100%;
       padding: 12px;
@@ -73,6 +86,7 @@
       margin-bottom: 12px;
       text-align: center;
     }
+
     .ai-box {
       font-size: 1.5rem;
       background: var(--accent);
@@ -83,11 +97,13 @@
       text-align: center;
       margin-top: 10px;
     }
+
     .single-number {
       font-size: 1rem;
       margin-top: 8px;
       text-align: center;
     }
+
     .progress-bar {
       background: #333;
       height: 10px;
@@ -95,39 +111,43 @@
       overflow: hidden;
       margin-top: 15px;
     }
+
     .progress-bar-fill {
       width: 100%;
       height: 100%;
       background: linear-gradient(to right, var(--primary), var(--glow));
       animation: shimmer 2s linear infinite;
     }
+
     @keyframes shimmer {
       0% {transform: translateX(-100%);}
       100% {transform: translateX(100%);}
     }
+
     .footer {
       text-align: center;
       color: var(--accent);
       margin-top: 15px;
       font-size: 0.9rem;
     }
+
     .status-text {
       text-align: center;
       font-size: 1rem;
       font-weight: bold;
       margin: 10px 0;
     }
+
     .status-premium { color: var(--success); }
     .status-not-premium { color: var(--error); }
+
     .device-id {
       text-align: center;
       margin-bottom: 8px;
     }
   </style>
 
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 </head>
 <body>
@@ -150,7 +170,6 @@
   </div>
 
   <script>
-    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCQRhzJWx2XYIdM30681Zoc6QI_t-IhzNw",
       authDomain: "ashurastore.firebaseapp.com",
@@ -161,86 +180,74 @@
       appId: "1:860052192821:web:3b6739051a144ed25cbb7c"
     };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
     const database = firebase.database();
 
-    // Protect dashboard: Redirect if not logged in
-    auth.onAuthStateChanged(user => {
-      if (!user) {
-        window.location.href = "index.html"; // redirect to login page
-      } else {
-        initDashboard();
+    const deviceId = (() => {
+      let id = localStorage.getItem("deviceId");
+      if (!id) {
+        id = Math.floor(Math.random() * 1000000).toString().padStart(6, "0");
+        localStorage.setItem("deviceId", id);
       }
-    });
+      return id;
+    })();
 
-    function initDashboard() {
-      const deviceId = (() => {
-        let id = localStorage.getItem("deviceId");
-        if (!id) {
-          id = Math.floor(Math.random() * 1000000).toString().padStart(6, "0");
-          localStorage.setItem("deviceId", id);
-        }
-        return id;
-      })();
+    document.getElementById("deviceIdDisplay").textContent = "Device ID: " + deviceId;
+    const predictionCard = document.getElementById("predictionCard");
+    const statusDisplay = document.getElementById("statusDisplay");
 
-      document.getElementById("deviceIdDisplay").textContent = "Device ID: " + deviceId;
-      const predictionCard = document.getElementById("predictionCard");
-      const statusDisplay = document.getElementById("statusDisplay");
+    let lastPredictedPeriod = -1;
 
-      let lastPredictedPeriod = -1;
-
-      function getPeriodUTC() {
-        const now = new Date();
-        return now.getUTCHours() * 60 + now.getUTCMinutes();
-      }
-
-      function updateTime() {
-        if (predictionCard.style.display === "none") return;
-
-        const now = new Date();
-        const h = now.getHours().toString().padStart(2, "0");
-        const m = now.getMinutes().toString().padStart(2, "0");
-        const s = now.getSeconds().toString().padStart(2, "0");
-        document.getElementById("timeDisplay").value = `${h}:${m}:${s}`;
-
-        const currentPeriod = getPeriodUTC();
-        const upcomingPeriod = currentPeriod + 1;
-
-        document.getElementById("periodDisplay").value = "Upcoming Period: " + upcomingPeriod;
-
-        if (lastPredictedPeriod !== upcomingPeriod) {
-          lastPredictedPeriod = upcomingPeriod;
-
-          const rand = Math.floor(Math.random() * 10);
-          const prediction = rand >= 5 ? "BIG" : "SMALL";
-          const actualResult = Math.floor(Math.random() * 10);
-
-          document.getElementById("aiPrediction").textContent = prediction;
-          document.getElementById("singleNumber").textContent = "Single Number: " + actualResult;
-        }
-      }
-
-      function checkPremiumStatus() {
-        const ref = database.ref("premiumUsers/" + deviceId);
-        ref.get().then(snapshot => {
-          if (snapshot.exists() && snapshot.val() === true) {
-            statusDisplay.textContent = "Status: Premium";
-            statusDisplay.classList.add("status-premium");
-            predictionCard.style.display = "block";
-            updateTime();
-            setInterval(updateTime, 1000);
-          } else {
-            statusDisplay.textContent = "Status: Not Premium";
-            statusDisplay.classList.add("status-not-premium");
-          }
-        }).catch(err => {
-          console.error(err);
-          statusDisplay.textContent = "Error checking status";
-        });
-      }
-
-      checkPremiumStatus();
+    function getPeriodUTC() {
+      const now = new Date();
+      return now.getUTCHours() * 60 + now.getUTCMinutes();
     }
+
+    function updateTime() {
+      if (predictionCard.style.display === "none") return;
+
+      const now = new Date();
+      const h = now.getHours().toString().padStart(2, "0");
+      const m = now.getMinutes().toString().padStart(2, "0");
+      const s = now.getSeconds().toString().padStart(2, "0");
+      document.getElementById("timeDisplay").value = `${h}:${m}:${s}`;
+
+      const currentPeriod = getPeriodUTC();
+      const upcomingPeriod = currentPeriod + 1;
+
+      document.getElementById("periodDisplay").value = "Upcoming Period: " + upcomingPeriod;
+
+      if (lastPredictedPeriod !== upcomingPeriod) {
+        lastPredictedPeriod = upcomingPeriod;
+
+        const rand = Math.floor(Math.random() * 10);
+        const prediction = rand >= 5 ? "BIG" : "SMALL";
+        const actualResult = Math.floor(Math.random() * 10);
+
+        document.getElementById("aiPrediction").textContent = prediction;
+        document.getElementById("singleNumber").textContent = "Single Number: " + actualResult;
+      }
+    }
+
+    function checkPremiumStatus() {
+      const ref = database.ref("premiumUsers/" + deviceId);
+      ref.get().then(snapshot => {
+        if (snapshot.exists() && snapshot.val() === true) {
+          statusDisplay.textContent = "Status: Premium";
+          statusDisplay.classList.add("status-premium");
+          predictionCard.style.display = "block";
+          updateTime();
+          setInterval(updateTime, 1000);
+        } else {
+          statusDisplay.textContent = "Status: Not Premium";
+          statusDisplay.classList.add("status-not-premium");
+        }
+      }).catch(err => {
+        console.error(err);
+        statusDisplay.textContent = "Error checking status";
+      });
+    }
+
+    checkPremiumStatus();
   </script>
 </body>
 </html>
